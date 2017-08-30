@@ -1,12 +1,18 @@
 import numpy as np
 import tensorflow as tf
+import util
+import sys
 import pdb
 
 NUM_ACTIONS = 3
-NUM_OBS = 10
+NUM_OBS = 11
 ENV_NAME = 'Hopper-v1'
-NUM_BATCHES_PER_EPOCH = 200
-NUM_EPOCHS_PER_DECAY = 10
+NUM_EXAMPLES = 16000
+CV_SIZE = 4000
+NUM_BATCHES_PER_EPOCH = 20
+BATCH_SIZE = 50
+NUM_EPOCHS = 100
+NUM_EPOCHS_PER_DECAY = 1
 FC1_SIZE = 10
 FC2_SIZE = 5
 
@@ -37,7 +43,7 @@ def train_epoch(x_train, y_train, hyperparam, prob, sess):
 
 def cross_validate(x_cv, y_cv, hyperparam, sess):
     batch_loss, batch_acc = 0, 0
-    num_batches = len(x_cv)/BATCH_SIZE
+    num_batches = int(len(x_cv)/BATCH_SIZE)
     for i in range(num_batches):
         x_batch, y_batch = x_cv[i*BATCH_SIZE: (i+1)*BATCH_SIZE], y_cv[i*BATCH_SIZE: (i+1)*BATCH_SIZE]
         curr_loss, curr_accuracy = sess.run([total_loss, accuracy], {x: x_batch,
@@ -90,16 +96,28 @@ total_loss = loss(y, preds, reg)
 train = tf.train.GradientDescentOptimizer(learning_rate).minimize(total_loss, global_step=global_step)
 
 accuracy = tf.reduce_mean(y-preds)
-pdb.set_trace()
-learning_rates = [1e-3]
+learning_rates = [1e-5]
 decay_rates = [.97]
-l2_regs = [.1]
+l2_regs = [0.0]
 hyperparams = [[i, j, k] for i in learning_rates for j in decay_rates for k in l2_regs]
+x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
+saver = tf.train.Saver()
 #summarys = tf.summary.scalar
-if sys.argv[1] == train:
+if sys.argv[1] == 'train':
     for hyperparam in hyperparams:
-        train_loss, train_acc = train_epoch(x_train, y_train, hyperparam, .8, sess)
-#        cv_loss, cv_acc = cross_validate(x_cv, y_cv, hyperparam, sess)
+        print(util.green(str(hyperparam)))
+        init = tf.global_variables_initializer()
+        sess = tf.Session()
+        sess.run(init)
+        for j in range(NUM_EPOCHS): 
+            train_loss, train_acc = train_epoch(x_train, y_train, hyperparam, 1, sess)
+            cv_loss, cv_acc = cross_validate(x_cv, y_cv, hyperparam, sess)
+            print("Curr Loss: %f\nCV Loss: %f\nCurr Accuracy: %s\nCV Accuracy: %s\nEPOCH: %d\n"%(train_loss,
+                                                                            cv_loss,
+                                                                            train_acc,
+                                                                            cv_acc,
+                                                                            j))
+            sys.stdout.flush()
 #        train_summary.value.add(tag="Train Loss", simple_value=train_loss)
 #        train_summary.value.add(tag="Train Acc", simple_value=train_acc)
 #        cv_summary.value.add(tag="CV Loss", simple_value=cv_loss)
