@@ -1,8 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import util
-import sys
-import pdb
+import sys, os, pdb
 
 NUM_ACTIONS = 3
 NUM_OBS = 11
@@ -17,7 +16,12 @@ FC1_SIZE = 10
 FC2_SIZE = 5
 
 def output_dir(params):
-    return './tf/%s_%s'%(ENV_NAME, "-".join([str(param) for param in params]))
+    dir_name = './tf/%s_%s'%(ENV_NAME, "-".join([str(param) for param in params]))
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+        os.makedirs('%s/train'%(dir_name))
+        os.makedirs('%s/cv'%(dir_name))
+    return dir_name
 
 def model(input_layer, weights, biases, keep_prob):
     fc1 = tf.nn.relu(tf.matmul(input_layer, weights['fc1']+biases['b1']))
@@ -95,38 +99,43 @@ preds = model(x, weights, biases, keep_prob)
 total_loss = loss(y, preds, reg)
 train = tf.train.GradientDescentOptimizer(learning_rate).minimize(total_loss, global_step=global_step)
 
+learn_rate_summary = tf.summary.scalar('learning_rate', learning_rate)
+
 accuracy = tf.reduce_mean(y-preds)
 learning_rates = [1e-5]
 decay_rates = [.97]
 l2_regs = [0.0]
 hyperparams = [[i, j, k] for i in learning_rates for j in decay_rates for k in l2_regs]
 x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
-saver = tf.train.Saver()
-#summarys = tf.summary.scalar
+#saver = tf.train.Saver()
+
 if sys.argv[1] == 'train':
     for hyperparam in hyperparams:
         print(util.green(str(hyperparam)))
         init = tf.global_variables_initializer()
         sess = tf.Session()
         sess.run(init)
+        train_summary = tf.Summary(); cv_summary = tf.Summary()
+        train_writer = tf.summary.FileWriter(output_dir(hyperparam) + '/train', sess.graph)
+        cv_writer = tf.summary.FileWriter(output_dir(hyperparam) + '/cv', sess.graph)
         for j in range(NUM_EPOCHS): 
             train_loss, train_acc = train_epoch(x_train, y_train, hyperparam, 1, sess)
             cv_loss, cv_acc = cross_validate(x_cv, y_cv, hyperparam, sess)
+            train_summary.value.add(tag="Train Loss", simple_value=train_loss)
+            train_summary.value.add(tag="Train Acc", simple_value=train_acc)
+            cv_summary.value.add(tag="CV Loss", simple_value=cv_loss)
+            cv_summary.value.add(tag="CV Acc", simple_value=cv_acc)
+            curr_learn_rate = sess.run(learn_rate_summary, {init_learn_rate: hyperparam[0], decay_rate: hyperparam[1]})
+            train_writer.add_summary(train_summary, j)
+            train_writer.add_summary(curr_learn_rate, j)
+            cv_writer.add_summary(cv_summary, j)
             print("Curr Loss: %f\nCV Loss: %f\nCurr Accuracy: %s\nCV Accuracy: %s\nEPOCH: %d\n"%(train_loss,
                                                                             cv_loss,
                                                                             train_acc,
                                                                             cv_acc,
                                                                             j))
-            sys.stdout.flush()
-#        train_summary.value.add(tag="Train Loss", simple_value=train_loss)
-#        train_summary.value.add(tag="Train Acc", simple_value=train_acc)
-#        cv_summary.value.add(tag="CV Loss", simple_value=cv_loss)
-#        cv_summary.value.add(tag="CV Acc", simple_value=cv_acc)
-#        curr_learn_rate = sess.run(learn_rate_summary, {init_learn_rate: hyperparam[0], decay_rate: hyperparam[1]})
-#        train_writer.add_summary(train_summary, j)
-#        train_writer.add_summary(curr_learn_rate, j)
-#        cv_writer.add_summary(cv_summary, j)
-#        saver.save(sess, output_dir(hyperparam) + '/model.ckpt')
+#            sys.stdout.flush()
+#       saver.save(sess, output_dir(hyperparam) + '/model.ckpt')
 #    else:
 #        init = tf.global_variables_initializer()
 #        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
