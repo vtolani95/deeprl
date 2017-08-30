@@ -15,6 +15,7 @@ import numpy as np
 import tf_util
 import gym
 import load_policy
+import pdb
 
 def main():
     import argparse
@@ -48,6 +49,7 @@ def main():
             totalr = 0.
             steps = 0
             while not done:
+                pdb.set_trace()
                 action = policy_fn(obs[None,:])
                 observations.append(obs)
                 actions.append(action)
@@ -67,6 +69,6 @@ def main():
 
         expert_data = {'observations': np.array(observations),
                        'actions': np.array(actions)}
-
+        np.save('./rollout_data/%s'%(args.envname), expert_data)
 if __name__ == '__main__':
     main()
