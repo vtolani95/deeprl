@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 NUM_ACTIONS = 3
 NUM_OBS = 11
 ENV_NAME = 'Hopper-v1'
-VERSION = '1.1'
+VERSION = '1.0'
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
 NUM_BATCHES_PER_EPOCH = 20

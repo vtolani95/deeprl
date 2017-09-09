@@ -1,0 +1,6 @@
+Fri Sep  8 22:47:56 2017
+ERROR: Invalid length of entrypted section
+
+Fri Sep  8 22:48:14 2017
+ERROR: Invalid length of entrypted section
+

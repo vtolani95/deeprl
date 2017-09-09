@@ -19,7 +19,7 @@ def main():
     expert_policy = load_policy.load_policy(EXPERT_POLICY)
     env = gym.make(ENV)
     x_train, x_cv, y_train, y_cv = util.load(ENV)
-    policy.load_model('Hopper-v1_0.0001-0.99-1e-05')
+    policy.load_model('Hopper-v1_v1.0_0.0001-0.99-1e-05')
     for i in range(NUM_ITERATIONS):
       #pdb.set_trace()
       policy.train_model([1e-4, .99, 1e-5], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
@@ -34,7 +34,7 @@ def plot(summaries):
   means = summaries[:,0]
   devs = summaries[:,1]
   t = np.r_[:len(means)]+1
-  plt.errorbar(t, means, devs, linestyle='None')
+  plt.errorbar(t, means, devs, linestyle='None', marker='^')
   plt.show()
 
 def rollout_policy(num_examples, env):

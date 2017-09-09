@@ -2,3 +2,4 @@
 *.npy
 *.swp
 hw1/tf/*
+/deeprl/*

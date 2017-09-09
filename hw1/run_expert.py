@@ -16,8 +16,6 @@ import tf_util
 import gym
 import load_policy
 import pdb
-#import bc_hopper
-#import bc_ant
 
 def main():
     import argparse
@@ -32,7 +30,6 @@ def main():
 
     print('loading and building expert policy')
     policy_fn = load_policy.load_policy(args.expert_policy_file)
-#    pdb.set_trace()
     print('loaded and built')
 
     with tf.Session():
@@ -53,7 +50,6 @@ def main():
             steps = 0
             while not done:
                 action = policy_fn(obs[None,:])
- #               action = bc_hopper.predict(obs[None,:])
                 observations.append(obs)
                 actions.append(action)
                 obs, r, done, _ = env.step(action)
