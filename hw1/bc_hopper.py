@@ -83,7 +83,7 @@ def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=Tr
   print(util.green(str(hyperparam)))
   saver = tf.train.Saver()
   init = tf.global_variables_initializer()
-  sess = tf.Session()
+  sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
   sess.run(init)
   summaries = []
   for j in range(num_epochs):
@@ -164,7 +164,7 @@ learning_rates = [1e-4]
 decay_rates = [.99]
 l2_regs = [1e-5]
 hyperparams = [[i, j, k] for i in learning_rates for j in decay_rates for k in l2_regs]
-
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
 if len(sys.argv) > 1 and sys.argv[1] == 'train':
     x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
     for hyperparam in hyperparams:
@@ -175,6 +175,6 @@ if len(sys.argv) > 1 and sys.argv[1] == 'train':
         saver.save(sess, output_dir(hyperparam) + '/model.ckpt')
 else:
     init = tf.global_variables_initializer()
-    sess = tf.Session()
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     sess.run(init)
 

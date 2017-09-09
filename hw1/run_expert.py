@@ -16,7 +16,7 @@ import tf_util
 import gym
 import load_policy
 import pdb
-import bc_hopper
+#import bc_hopper
 #import bc_ant
 
 def main():
@@ -31,8 +31,8 @@ def main():
     args = parser.parse_args()
 
     print('loading and building expert policy')
-#    policy_fn = load_policy.load_policy(args.expert_policy_file)
-    pdb.set_trace()
+    policy_fn = load_policy.load_policy(args.expert_policy_file)
+#    pdb.set_trace()
     print('loaded and built')
 
     with tf.Session():
@@ -52,8 +52,8 @@ def main():
             totalr = 0.
             steps = 0
             while not done:
- #               action = policy_fn(obs[None,:])
-                action = bc_hopper.predict(obs[None,:])
+                action = policy_fn(obs[None,:])
+ #               action = bc_hopper.predict(obs[None,:])
                 observations.append(obs)
                 actions.append(action)
                 obs, r, done, _ = env.step(action)
@@ -72,7 +72,7 @@ def main():
 
         expert_data = {'observations': np.array(observations),
                        'actions': np.array(actions)}
-        pdb.set_trace()
-        #np.save('./rollout_data/%s'%(args.envname), expert_data)
+        #pdb.set_trace()
+        np.save('./rollout_data/%s'%(args.envname), expert_data)
 if __name__ == '__main__':
     main()
