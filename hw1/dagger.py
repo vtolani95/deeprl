@@ -5,6 +5,7 @@ import bc_hopper as policy
 import load_policy
 import gym
 import pdb
+import matplotlib.pyplot as plt
 
 #envs = [['Hopper-v1', 10, 3
 ENV = 'Hopper-v1'
