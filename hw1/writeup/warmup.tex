@@ -1,0 +1,26 @@
+\documentclass[12pt]{report}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\usepackage[headheight = 50pt, top=1.5in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{fancyhdr}
+
+\pagenumbering{gobble}
+\pagestyle{fancy}
+
+\renewcommand{\headrulewidth}{4pt}
+\lhead{
+Class: Deep RL\\
+SID: 24274554\\
+Name: Varun Tolani
+\\
+HW: 1\\
+}
+\fancyhead[R]{\sf\rightmark}
+\begin{document}
+\section*{Warmup}
+Train Loss for Behavioral Cloning on Hopper-V1 environment.
+\\(Batch Size: 50)\\
+\includegraphics[scale=.95]{./images/warmup_train_loss.png}
+\end{document}
