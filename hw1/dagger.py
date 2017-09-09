@@ -30,9 +30,9 @@ def main():
     plot(np.array(summaries))
  
 def plot(summaries):
-  t = np.r_[:len(means)]+1
   means = summaries[:,0]
   devs = summaries[:,1]
+  t = np.r_[:len(means)]+1
   plt.errorbar(t, means, devs, linestyle='None')
   plt.show()
 
