@@ -1,17 +1,17 @@
 import numpy as np
 import tensorflow as tf
 import util, tf_util
-import bc_hopper as policy
+import bc_ant as policy
 import load_policy
 import gym
 import pdb
 import matplotlib.pyplot as plt
 
 #envs = [['Hopper-v1', 10, 3
-ENV = 'Hopper-v1'
+ENV = 'Ant-v1'
 EXPERT_POLICY = 'experts/%s.pkl'%(ENV)
-NUM_EPOCHS = 200
-NUM_ITERATIONS = 20
+NUM_EPOCHS = 2#200#for each policy update
+NUM_ITERATIONS = 2#40#num dagger iterations
 
 def main():
   summaries = []
@@ -19,15 +19,16 @@ def main():
     expert_policy = load_policy.load_policy(EXPERT_POLICY)
     env = gym.make(ENV)
     x_train, x_cv, y_train, y_cv = util.load(ENV)
-    policy.load_model('Hopper-v1_v1.0_0.0001-0.99-1e-05')
+    policy.load_model('Ant-v1_v1.0_0.0001-0.99-1e-05-1')
     for i in range(NUM_ITERATIONS):
       #pdb.set_trace()
-      policy.train_model([1e-4, .99, 1e-5], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
+      policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
       obs, mean, dev = rollout_policy(1000, env)
       summaries.append([mean, dev])
-      print('Mean: %f, Dev: %f'%(mean, dev))
+      print('Iter: %d, Mean: %f, Dev: %f'%(i, mean, dev))
       actions = label_data(obs, expert_policy)
       x_train, x_cv, y_train, y_cv = aggregate(x_train, x_cv, y_train, y_cv, obs, actions)
+    np.save('./dagger_data/%s.npy'%(ENV), summaries) 
     plot(np.array(summaries))
  
 def plot(summaries):
@@ -35,7 +36,12 @@ def plot(summaries):
   devs = summaries[:,1]
   t = np.r_[:len(means)]+1
   plt.errorbar(t, means, devs, linestyle='None', marker='^')
-  plt.show()
+  plt.plot(t, np.ones(len(t))*-3.9318, 'r-') #mean
+  plt.xlabel('# Dagger Iterations')
+  plt.ylabel('Return')
+  plt.title('Avg return vs iteration of Dagger')
+  plt.savefig('./dagger_data/4_2_%s.png'%(ENV))
+
 
 def rollout_policy(num_examples, env):
   max_steps = env.spec.timestep_limit
@@ -59,6 +65,7 @@ def rollout_policy(num_examples, env):
         break
     i += 1
     returns.append(totalr)
+  pdb.set_trace()
   return np.array(observations), np.mean(returns), np.std(returns)
 
 def label_data(obs, expert_policy):

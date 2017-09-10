@@ -4,9 +4,9 @@ import util
 import sys, os, pdb
 import matplotlib.pyplot as plt
 
-NUM_ACTIONS = 3
-NUM_OBS = 11
-ENV_NAME = 'Hopper-v1'
+NUM_ACTIONS = 8
+NUM_OBS = 111
+ENV_NAME = 'Ant-v1'
 VERSION = '1.0'
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
@@ -14,9 +14,9 @@ NUM_BATCHES_PER_EPOCH = 20
 BATCH_SIZE = 50
 NUM_EPOCHS = 500
 NUM_EPOCHS_PER_DECAY = 5
-FC1_SIZE = 10
-FC2_SIZE = 10
-FC3_SIZE = 7
+FC1_SIZE = 64
+FC2_SIZE = 64
+FC3_SIZE = 32
 DISPLAY_STEP = 10
 
 def output_dir(params):
@@ -163,7 +163,7 @@ accuracy = tf.reduce_mean(tf.square(y-preds))
 learning_rates = [1e-4]
 decay_rates = [.99]
 l2_regs = [1e-5]
-dropouts = [1]
+dropouts = [1.0]
 hyperparams = [[i, j, k, m] for i in learning_rates for j in decay_rates for k in l2_regs for m in dropouts]
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
 if len(sys.argv) > 1 and sys.argv[1] == 'train':

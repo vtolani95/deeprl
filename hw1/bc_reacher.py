@@ -4,10 +4,10 @@ import util
 import sys, os, pdb
 import matplotlib.pyplot as plt
 
-NUM_ACTIONS = 3
+NUM_ACTIONS = 2
 NUM_OBS = 11
-ENV_NAME = 'Hopper-v1'
-VERSION = '1.0'
+ENV_NAME = 'Reacher-v1'
+VERSION = '1.1'
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
 NUM_BATCHES_PER_EPOCH = 20
@@ -163,9 +163,10 @@ accuracy = tf.reduce_mean(tf.square(y-preds))
 learning_rates = [1e-4]
 decay_rates = [.99]
 l2_regs = [1e-5]
-dropouts = [1]
+dropouts = [1.0, .975, .95, .925, .9, .875, .85, .825, .8, .775, .75, .725, .7]
+#dropouts = [1.0]
 hyperparams = [[i, j, k, m] for i in learning_rates for j in decay_rates for k in l2_regs for m in dropouts]
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.75)
 if len(sys.argv) > 1 and sys.argv[1] == 'train':
     x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
     for hyperparam in hyperparams:

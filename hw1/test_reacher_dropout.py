@@ -29,7 +29,6 @@ def get_dropouts():
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('expert_policy_file', type=str)
     parser.add_argument('envname', type=str)
     parser.add_argument('--render', action='store_true')
     parser.add_argument("--max_timesteps", type=int)
@@ -38,8 +37,6 @@ def main():
     args = parser.parse_args()
     dirs, dropouts = get_dropouts()
     print('loading and building expert policy')
-    #policy_fn = load_policy.load_policy(args.expert_policy_file)
-    #pdb.set_trace()
     print('loaded and built')
     model_means, model_devs = [], []
     for i in range(len(dirs)):

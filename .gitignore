@@ -3,3 +3,4 @@
 *.swp
 hw1/tf/*
 /deeprl/*
+*.png
