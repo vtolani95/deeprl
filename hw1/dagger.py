@@ -7,11 +7,11 @@ import gym
 import pdb
 import matplotlib.pyplot as plt
 
-ENV = 'Reacher-v1'
+ENV = 'Walker2d-v1'
 EXPERT_POLICY = 'experts/%s.pkl'%(ENV)
-NUM_EPOCHS = 100#200#for each policy update
+NUM_EPOCHS = 10
 NUM_ITERATIONS = 20#40#num dagger iterations
-NUM_EXAMPLES = 2000
+NUM_ROLLOUTS = 10#collect new data
 
 def main():
   summaries = []
@@ -25,11 +25,10 @@ def main():
       x_train, x_cv, y_train, y_cv, = util.load(ENV, True, data_mean, data_std)
     else:
       x_train, x_cv, y_train, y_cv, = util.load(ENV)
-    x_train, x_cv, y_train, y_cv = x_train[:8000], x_cv[:2000], y_train[:8000], y_cv[:2000]
     for i in range(NUM_ITERATIONS):
       _, sess = policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
     #  policy.load_model('Reacher-v1_v1.0_0.0001-0.99-1e-05-1.0', 399)#Unstandardized
-      obs, mean, dev = rollout_policy(NUM_EXAMPLES, env, data_mean, data_std)
+      obs, mean, dev = rollout_policy(NUM_ROLLOUTS, env, data_mean, data_std)
       summaries.append([mean, dev])
       print('Iter: %d, Mean: %f, Dev: %f'%(i, mean, dev))
       actions = label_data(obs, expert_policy)
@@ -53,8 +52,7 @@ def rollout_policy(num_examples, env, mean, std):
   returns, means, devs = [], [], []
   observations = []
   i = 0
-  #pdb.set_trace()
-  while len(observations) < num_examples:
+  for i in range(num_rollouts):
     obs = env.reset()
     done = False
     totalr = 0.
@@ -79,13 +77,9 @@ def label_data(obs, expert_policy):
     return np.array(actions)
 
 def aggregate(x_train, x_cv, y_train, y_cv, observations, actions):
-  ind = int(len(observations)*.8)
-  observations, actions = util.shuffle_data(observations, actions)
-  x_train = np.append(x_train, observations[:ind], axis=0)
-  x_cv = np.append(x_cv, observations[ind:], axis=0)
-  y_train = np.append(y_train, actions[:ind], axis=0)
-  y_cv = np.append(y_cv, actions[ind:], axis=0)
-  return x_train, x_cv, y_train, y_cv  
+  x = np.append(x_train, observations, axis=0)
+  y = np.append(y_train, actions, axis=0)
+  return x, x_cv, y, y_cv
 
 if __name__ == '__main__':
   main()
