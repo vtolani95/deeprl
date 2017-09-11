@@ -15,7 +15,7 @@ import numpy as np
 import tf_util
 import gym
 import pdb
-import bc_hopper as policy
+import behavioral_cloning as policy
 
 def main():
     import argparse
@@ -28,9 +28,11 @@ def main():
     args = parser.parse_args()
 
     print('loading and building expert policy')
-    mean, std = np.load('rollout_data/hopper_standardize.npy')
-    #policy.load_model('Ant-v1_v1.0_0.0001-0.99-1e-05-1.0')
-    policy.load_model('Hopper-v1_v1.1_0.001-0.99-1e-05-1')
+    mean, std = np.load('rollout_data/%s_standardize.npy'%(args.envname))
+    policy.ENV_NAME = args.envname
+    policy.STANDARDIZE = True
+    policy.load_model('Reacher-v1_v1.1_0.0001-0.99-1e-05-1.0', 399)#Unstandardized
+    #policy.load_model('Ant-v1_v1.1_0.0001-0.99-1e-05-1.0', 399) #Stanardized
     print('loaded and built')
 
 
@@ -41,7 +43,7 @@ def main():
     observations = []
     actions = []
     for i in range(args.num_rollouts):
-        print('iter', i)
+        #print('iter', i)
         obs = env.reset()
         done = False
         totalr = 0.
@@ -55,14 +57,13 @@ def main():
             steps += 1
             if args.render:
                 env.render()
-            if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
+            #if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
             if steps >= max_steps:
                 break
         returns.append(totalr)
-
-    print('returns', returns)
-    print('mean return', np.mean(returns))
-    print('std of return', np.std(returns))
+    expert_mean, expert_dev = np.load('./rollout_data/%s_performance.npy'%(args.envname))
+    print('Expert Mean: %f, Expert Std: %f'%(expert_mean, expert_dev))
+    print('BC Mean: %f, BC Std: %f'%(np.mean(returns), np.std(returns))) 
 
 if __name__ == '__main__':
     main()

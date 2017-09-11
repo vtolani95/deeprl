@@ -4,17 +4,17 @@ import util
 import sys, os, pdb
 import matplotlib.pyplot as plt
 
-import bc_models.hopper as bc_agent
+import bc_models.reacher as bc_agent
 
 ENV_NAME = bc_agent.ENV_NAME
 VERSION = bc_agent.VERSION
-STANDARDIZE = False
+STANDARDIZE = True
 
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
 NUM_BATCHES_PER_EPOCH = 20
 BATCH_SIZE = 50
-NUM_EPOCHS = 50
+NUM_EPOCHS = 400
 NUM_EPOCHS_PER_DECAY = 5
 DISPLAY_STEP = 10
 
@@ -60,13 +60,15 @@ def loss(y, preds, reg, weights):
     pred_loss = tf.nn.l2_loss(y-preds)
     return pred_loss + reg*weight_loss
 
-def predict(obs):
+def predict(obs, mean, std):
+    if STANDARDIZE:
+      obs = util.standardize(obs, mean, std)
     actions = sess.run([preds], {x: obs, keep_prob: 1})
     return actions
 
-def load_model(model):
+def load_model(model, num):
     saver = tf.train.Saver()
-    saver.restore(sess, './tf/%s/model.ckpt'%(model))
+    saver.restore(sess, './tf/%s/model_%d.ckpt'%(model, num))
 
 #hyperparam- [learn rate, decay rate, l2 reg]
 def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=True):
@@ -106,7 +108,7 @@ def plot_training(summaries, hyperparam):
     ax = fig.add_subplot(1,2,2)
     ax.plot(train_acc, 'r-', label='Train')
     ax.plot(cv_acc, 'b-', label='CV')
-    plt.title('L2 Error Per Batch(50)')
+    plt.title('Mean L2 Error Per Example(Over Batch[50])')
     plt.xlabel('Epoch')
     plt.legend()
 
@@ -136,7 +138,7 @@ gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
 if len(sys.argv) > 1 and sys.argv[1] == 'train':
     std = np.load('./rollout_data/%s_standardize.npy'%(ENV_NAME))
     if STANDARDIZE:
-        x_train, x_cv, y_train, y_cv = util.load(ENV_NAME, std)
+        x_train, x_cv, y_train, y_cv = util.load(ENV_NAME, True, std[0], std[1])
     else:
         x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
     for hyperparam in hyperparams:

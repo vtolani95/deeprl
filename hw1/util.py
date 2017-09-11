@@ -1,11 +1,11 @@
 import numpy as np
 import pdb
 
-def load(envname, std=None):
+def load(envname, std_data=False, mean=None, std=None):
     data = np.load('./rollout_data/%s.npy'%(envname))[()]
     x, y =  data['observations'], data['actions']
-    if std:
-      x = standardize(x, std[0], std[1])
+    if std_data:
+      x = standardize(x, mean, std)
     y = reshape_actions(y)
     x, y = shuffle_data(x, y)
     x_train, x_cv, y_train, y_cv = split_data(x, y)
