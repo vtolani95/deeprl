@@ -1,20 +1,18 @@
 import numpy as np
 import pdb
 
-def load(envname):
+def load(envname, std=None):
     data = np.load('./rollout_data/%s.npy'%(envname))[()]
     x, y =  data['observations'], data['actions']
-#    x, mean, std = standardize(x)    
+    if std:
+      x = standardize(x, std[0], std[1])
     y = reshape_actions(y)
     x, y = shuffle_data(x, y)
     x_train, x_cv, y_train, y_cv = split_data(x, y)
     return x_train, x_cv, y_train, y_cv
 
-def standardize(x):
-    mean = np.mean(x, axis=0)
-    std = np.max(np.abs(x))
-    x = (x-mean)/std
-    return x, mean, std 
+def standardize(x, mean, std):
+    return (x-mean)/std
 
 def shuffle_data(x, y):
     assert len(x) == len(y)

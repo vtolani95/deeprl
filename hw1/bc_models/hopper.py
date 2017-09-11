@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+ENV_NAME = 'Hopper-v1'
 VERSION = '1.0'
 NUM_ACTIONS = 3
 NUM_OBS = 11

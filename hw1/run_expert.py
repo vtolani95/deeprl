@@ -68,7 +68,9 @@ def main():
 
         expert_data = {'observations': np.array(observations),
                        'actions': np.array(actions)}
-        #pdb.set_trace()
-#        np.save('./rollout_data/%s'%(args.envname), expert_data)
+        #mean, std = np.mean(expert_data['observations'], axis=0), np.std(expert_data['observations'], axis=0) + 1e-6
+        #np.save('./rollout_data/%s'%(args.envname), expert_data)
+        #np.save('./rollout_data/%s_standardize.npy'%(args.envname), [mean, std]) 
+        #np.save('./rollout_data/%s_performance.npy'%(args.envname), [np.mean(returns), np.std(returns)])
 if __name__ == '__main__':
     main()

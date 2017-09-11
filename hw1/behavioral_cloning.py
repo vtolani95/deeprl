@@ -5,18 +5,21 @@ import sys, os, pdb
 import matplotlib.pyplot as plt
 
 import bc_models.hopper as bc_agent
+
 ENV_NAME = bc_agent.ENV_NAME
+VERSION = bc_agent.VERSION
+STANDARDIZE = False
 
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
 NUM_BATCHES_PER_EPOCH = 20
 BATCH_SIZE = 50
-NUM_EPOCHS = 500
+NUM_EPOCHS = 50
 NUM_EPOCHS_PER_DECAY = 5
 DISPLAY_STEP = 10
 
 def output_dir(params):
-    dir_name = './tf/%s_v%s_%s'%(ENV_NAME, bc_agent.VERSION,"-".join([str(param) for param in params]))
+    dir_name = './tf/%s_v%s_%s'%(ENV_NAME, VERSION,"-".join([str(param) for param in params]))
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     return dir_name
@@ -83,6 +86,9 @@ def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=Tr
                                                                     train_acc,
                                                                     cv_acc,
                                                                     j))
+    if j % 50 == 0:
+      saver.save(sess, output_dir(hyperparam) + '/model_%d.ckpt'%(j))
+  saver.save(sess, output_dir(hyperparam) + '/model_%d.ckpt'%(j))
   return np.array(summaries), sess
 
 def plot_training(summaries, hyperparam):
@@ -94,14 +100,14 @@ def plot_training(summaries, hyperparam):
     ax.plot(train_loss, 'r-', label='Train')
     ax.plot(cv_loss, 'b-', label='CV')
     plt.title('Loss Per Batch(50)')
-    plt.xlabel('# Gradient Steps')
+    plt.xlabel('Epoch')
     plt.legend()
 
     ax = fig.add_subplot(1,2,2)
     ax.plot(train_acc, 'r-', label='Train')
     ax.plot(cv_acc, 'b-', label='CV')
     plt.title('L2 Error Per Batch(50)')
-    plt.xlabel('# Gradient Steps')
+    plt.xlabel('Epoch')
     plt.legend()
 
 global_step = tf.Variable(0, trainable=False)
@@ -124,17 +130,19 @@ accuracy = tf.reduce_mean(tf.square(y-preds))
 learning_rates = [1e-4]
 decay_rates = [.99]
 l2_regs = [1e-5]
-dropouts = [1]
+dropouts = [1.0]
 hyperparams = [[i, j, k, m] for i in learning_rates for j in decay_rates for k in l2_regs for m in dropouts]
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
 if len(sys.argv) > 1 and sys.argv[1] == 'train':
-    x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
+    std = np.load('./rollout_data/%s_standardize.npy'%(ENV_NAME))
+    if STANDARDIZE:
+        x_train, x_cv, y_train, y_cv = util.load(ENV_NAME, std)
+    else:
+        x_train, x_cv, y_train, y_cv = util.load(ENV_NAME)
     for hyperparam in hyperparams:
-        saver = tf.train.Saver()
         summaries, sess = train_model(hyperparam, x_train, x_cv, y_train, y_cv, NUM_EPOCHS)
         plot_training(summaries, hyperparam)
         plt.savefig(output_dir(hyperparam)+'/train_summary.png')
-        saver.save(sess, output_dir(hyperparam) + '/model.ckpt')
 else:
     init = tf.global_variables_initializer()
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
