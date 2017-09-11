@@ -38,7 +38,7 @@ biases = {'b1': tf.get_variable("b1",
 def model(input_layer, keep_prob):
     fc1 = tf.nn.relu(tf.matmul(input_layer, weights['fc1']+biases['b1']))
     fc2 = tf.nn.relu(tf.matmul(fc1, weights['fc2']+biases['b2']))
-    fc3 = tf.nn.relu(tf.matmul(fc1, weights['fc3']+biases['b3']))
+    fc3 = tf.nn.relu(tf.matmul(fc2, weights['fc3']+biases['b3']))
     dropout = tf.nn.dropout(fc3, keep_prob)
     preds = tf.matmul(dropout, weights['fc4'] + biases['b4'])
     return preds    

@@ -4,11 +4,11 @@ import util
 import sys, os, pdb
 import matplotlib.pyplot as plt
 
-import bc_models.reacher as bc_agent
+import bc_models.cheetah as bc_agent
 
 ENV_NAME = bc_agent.ENV_NAME
 VERSION = bc_agent.VERSION
-STANDARDIZE = True
+STANDARDIZE = False
 
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
@@ -122,6 +122,7 @@ keep_prob = tf.placeholder(tf.float32)
 x = tf.placeholder(tf.float32, shape=(None, bc_agent.NUM_OBS))
 y = tf.placeholder(tf.float32, shape=(None, bc_agent.NUM_ACTIONS))
 
+pdb.set_trace()
 preds = bc_agent.model(x, keep_prob)
 total_loss = loss(y, preds, reg, bc_agent.weights)
 train = tf.train.GradientDescentOptimizer(learning_rate).minimize(total_loss, global_step=global_step)
