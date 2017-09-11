@@ -9,13 +9,14 @@ import matplotlib.pyplot as plt
 
 ENV = 'Reacher-v1'
 EXPERT_POLICY = 'experts/%s.pkl'%(ENV)
-NUM_EPOCHS = 400#200#for each policy update
+NUM_EPOCHS = 100#200#for each policy update
 NUM_ITERATIONS = 20#40#num dagger iterations
 NUM_EXAMPLES = 2000
 
 def main():
   summaries = []
   with tf.Session():
+    tf_util.initialize()
     expert_policy = load_policy.load_policy(EXPERT_POLICY)
     env = gym.make(ENV)
     data_mean, data_std = np.load('rollout_data/%s_standardize.npy'%(ENV))
@@ -24,6 +25,7 @@ def main():
       x_train, x_cv, y_train, y_cv, = util.load(ENV, True, data_mean, data_std)
     else:
       x_train, x_cv, y_train, y_cv, = util.load(ENV)
+    x_train, x_cv, y_train, y_cv = x_train[:8000], x_cv[:2000], y_train[:8000], y_cv[:2000]
     for i in range(NUM_ITERATIONS):
       _, sess = policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
     #  policy.load_model('Reacher-v1_v1.0_0.0001-0.99-1e-05-1.0', 399)#Unstandardized

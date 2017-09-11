@@ -10,8 +10,8 @@ ENV_NAME = bc_agent.ENV_NAME
 VERSION = bc_agent.VERSION
 STANDARDIZE = True
 
-NUM_EXAMPLES = 16000
-CV_SIZE = 4000
+NUM_EXAMPLES = 4000
+CV_SIZE = 1000
 NUM_BATCHES_PER_EPOCH = 20
 BATCH_SIZE = 50
 NUM_EPOCHS = 400
@@ -70,6 +70,9 @@ def load_model(model, num):
     saver = tf.train.Saver()
     saver.restore(sess, './tf/%s/model_%d.ckpt'%(model, num))
 
+def load_dagger_model(model, num):
+    saver = tf.train.Saver()
+    saver.restore(sess, './dagger/%s/model_%d.ckpt'%(model, num))
 #hyperparam- [learn rate, decay rate, l2 reg]
 def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=True, save=False):
   print(util.green(str(hyperparam)))
