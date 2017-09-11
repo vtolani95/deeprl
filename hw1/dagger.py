@@ -25,8 +25,8 @@ def main():
     else:
       x_train, x_cv, y_train, y_cv, = util.load(ENV)
     for i in range(NUM_ITERATIONS):
-      #pdb.set_trace()
-      policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
+      _, sess = policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
+    #  policy.load_model('Reacher-v1_v1.0_0.0001-0.99-1e-05-1.0', 399)#Unstandardized
       obs, mean, dev = rollout_policy(NUM_EXAMPLES, env, data_mean, data_std)
       summaries.append([mean, dev])
       print('Iter: %d, Mean: %f, Dev: %f'%(i, mean, dev))
@@ -51,7 +51,7 @@ def rollout_policy(num_examples, env, mean, std):
   returns, means, devs = [], [], []
   observations = []
   i = 0
-  pdb.set_trace()
+  #pdb.set_trace()
   while len(observations) < num_examples:
     obs = env.reset()
     done = False
