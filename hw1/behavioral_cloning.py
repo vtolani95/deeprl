@@ -70,9 +70,9 @@ def load_model(model, num):
     saver = tf.train.Saver()
     saver.restore(sess, './tf/%s/model_%d.ckpt'%(model, num))
 
-def load_dagger_model(model, version, num):
+def load_dagger_model(model, num):
     saver = tf.train.Saver()
-    saver.restore(sess, './dagger/%s_%s/model_%d.ckpt'%(model, version, num))
+    saver.restore(sess, './dagger/%s/model_%d.ckpt'%(model, num))
 #hyperparam- [learn rate, decay rate, l2 reg]
 def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=True, save=False):
   print(util.green(str(hyperparam)))
