@@ -4,11 +4,11 @@ import util
 import sys, os, pdb
 import matplotlib.pyplot as plt
 
-import bc_models.cheetah as bc_agent
+import bc_models.reacher as bc_agent
 
 ENV_NAME = bc_agent.ENV_NAME
 VERSION = bc_agent.VERSION
-STANDARDIZE = False
+STANDARDIZE = True
 
 NUM_EXAMPLES = 16000
 CV_SIZE = 4000
@@ -71,9 +71,10 @@ def load_model(model, num):
     saver.restore(sess, './tf/%s/model_%d.ckpt'%(model, num))
 
 #hyperparam- [learn rate, decay rate, l2 reg]
-def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=True):
+def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=True, save=False):
   print(util.green(str(hyperparam)))
-  saver = tf.train.Saver()
+  if save:
+    saver = tf.train.Saver()
   init = tf.global_variables_initializer()
   sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
   sess.run(init)
@@ -88,9 +89,10 @@ def train_model(hyperparam, x_train, x_cv, y_train, y_cv, num_epochs, display=Tr
                                                                     train_acc,
                                                                     cv_acc,
                                                                     j))
-    if j % 50 == 0:
+    if save and j % 50 == 0:
       saver.save(sess, output_dir(hyperparam) + '/model_%d.ckpt'%(j))
-  saver.save(sess, output_dir(hyperparam) + '/model_%d.ckpt'%(j))
+  if save:
+    saver.save(sess, output_dir(hyperparam) + '/model_%d.ckpt'%(j))
   return np.array(summaries), sess
 
 def plot_training(summaries, hyperparam):
@@ -122,7 +124,6 @@ keep_prob = tf.placeholder(tf.float32)
 x = tf.placeholder(tf.float32, shape=(None, bc_agent.NUM_OBS))
 y = tf.placeholder(tf.float32, shape=(None, bc_agent.NUM_ACTIONS))
 
-pdb.set_trace()
 preds = bc_agent.model(x, keep_prob)
 total_loss = loss(y, preds, reg, bc_agent.weights)
 train = tf.train.GradientDescentOptimizer(learning_rate).minimize(total_loss, global_step=global_step)

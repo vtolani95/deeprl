@@ -1,29 +1,33 @@
 import numpy as np
 import tensorflow as tf
 import util, tf_util
-import bc_ant as policy
+import behavioral_cloning as policy
 import load_policy
 import gym
 import pdb
 import matplotlib.pyplot as plt
 
-#envs = [['Hopper-v1', 10, 3
-ENV = 'Hopper-v1'
+ENV = 'Reacher-v1'
 EXPERT_POLICY = 'experts/%s.pkl'%(ENV)
-NUM_EPOCHS = 200#200#for each policy update
+NUM_EPOCHS = 400#200#for each policy update
 NUM_ITERATIONS = 20#40#num dagger iterations
 NUM_EXAMPLES = 2000
+
 def main():
   summaries = []
   with tf.Session():
     expert_policy = load_policy.load_policy(EXPERT_POLICY)
     env = gym.make(ENV)
-    #mean, std = np.load('rollout_data/hopper_standardize.npy')
-    x_train, x_cv, y_train, y_cv, mean_data, std_data = util.load(ENV)
+    data_mean, data_std = np.load('rollout_data/%s_standardize.npy'%(ENV))
+    policy.STANDARDIZE = False
+    if policy.STANDARDIZE:
+      x_train, x_cv, y_train, y_cv, = util.load(ENV, True, data_mean, data_std)
+    else:
+      x_train, x_cv, y_train, y_cv, = util.load(ENV)
     for i in range(NUM_ITERATIONS):
       #pdb.set_trace()
-      policy.train_model([1e-3, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
-      obs, mean, dev = rollout_policy(NUM_EXAMPLES, env, mean_data, std_data)
+      policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
+      obs, mean, dev = rollout_policy(NUM_EXAMPLES, env, data_mean, data_std)
       summaries.append([mean, dev])
       print('Iter: %d, Mean: %f, Dev: %f'%(i, mean, dev))
       actions = label_data(obs, expert_policy)
@@ -47,6 +51,7 @@ def rollout_policy(num_examples, env, mean, std):
   returns, means, devs = [], [], []
   observations = []
   i = 0
+  pdb.set_trace()
   while len(observations) < num_examples:
     obs = env.reset()
     done = False
@@ -54,8 +59,8 @@ def rollout_policy(num_examples, env, mean, std):
     steps = 0
     while not done:
       action = policy.predict(obs[None,:], mean, std)
-      observations.append(obs)
       obs, r, done, _ = env.step(action)
+      observations.append(obs)
       totalr += r
       steps += 1;
       if steps >= max_steps:

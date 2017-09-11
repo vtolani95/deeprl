@@ -30,8 +30,8 @@ def main():
     print('loading and building expert policy')
     mean, std = np.load('rollout_data/%s_standardize.npy'%(args.envname))
     policy.ENV_NAME = args.envname
-    policy.STANDARDIZE = True
-    policy.load_model('Reacher-v1_v1.1_0.0001-0.99-1e-05-1.0', 399)#Unstandardized
+    policy.STANDARDIZE = False
+    policy.load_model('Reacher-v1_v1.0_0.0001-0.99-1e-05-1.0', 399)#Unstandardized
     #policy.load_model('Ant-v1_v1.1_0.0001-0.99-1e-05-1.0', 399) #Stanardized
     print('loaded and built')
 
@@ -42,6 +42,9 @@ def main():
     returns = []
     observations = []
     actions = []
+   
+     #while len(observations) < 2000:
+    pdb.set_trace()
     for i in range(args.num_rollouts):
         #print('iter', i)
         obs = env.reset()
