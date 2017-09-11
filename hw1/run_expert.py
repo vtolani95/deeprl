@@ -69,6 +69,6 @@ def main():
         expert_data = {'observations': np.array(observations),
                        'actions': np.array(actions)}
         #pdb.set_trace()
-        np.save('./rollout_data/%s'%(args.envname), expert_data)
+#        np.save('./rollout_data/%s'%(args.envname), expert_data)
 if __name__ == '__main__':
     main()

@@ -8,22 +8,22 @@ import pdb
 import matplotlib.pyplot as plt
 
 #envs = [['Hopper-v1', 10, 3
-ENV = 'Ant-v1'
+ENV = 'Hopper-v1'
 EXPERT_POLICY = 'experts/%s.pkl'%(ENV)
-NUM_EPOCHS = 2#200#for each policy update
-NUM_ITERATIONS = 2#40#num dagger iterations
-
+NUM_EPOCHS = 200#200#for each policy update
+NUM_ITERATIONS = 20#40#num dagger iterations
+NUM_EXAMPLES = 2000
 def main():
   summaries = []
   with tf.Session():
     expert_policy = load_policy.load_policy(EXPERT_POLICY)
     env = gym.make(ENV)
-    x_train, x_cv, y_train, y_cv = util.load(ENV)
-    policy.load_model('Ant-v1_v1.0_0.0001-0.99-1e-05-1')
+    #mean, std = np.load('rollout_data/hopper_standardize.npy')
+    x_train, x_cv, y_train, y_cv, mean_data, std_data = util.load(ENV)
     for i in range(NUM_ITERATIONS):
       #pdb.set_trace()
-      policy.train_model([1e-4, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
-      obs, mean, dev = rollout_policy(1000, env)
+      policy.train_model([1e-3, .99, 1e-5, 1.0], x_train, x_cv, y_train, y_cv, NUM_EPOCHS, display=False)
+      obs, mean, dev = rollout_policy(NUM_EXAMPLES, env, mean_data, std_data)
       summaries.append([mean, dev])
       print('Iter: %d, Mean: %f, Dev: %f'%(i, mean, dev))
       actions = label_data(obs, expert_policy)
@@ -36,36 +36,32 @@ def plot(summaries):
   devs = summaries[:,1]
   t = np.r_[:len(means)]+1
   plt.errorbar(t, means, devs, linestyle='None', marker='^')
-  plt.plot(t, np.ones(len(t))*-3.9318, 'r-') #mean
+  plt.plot(t, np.ones(len(t))*4814, 'r-') #mean
   plt.xlabel('# Dagger Iterations')
   plt.ylabel('Return')
   plt.title('Avg return vs iteration of Dagger')
   plt.savefig('./dagger_data/4_2_%s.png'%(ENV))
 
-
-def rollout_policy(num_examples, env):
+def rollout_policy(num_examples, env, mean, std):
   max_steps = env.spec.timestep_limit
   returns, means, devs = [], [], []
   observations = []
   i = 0
   while len(observations) < num_examples:
-    #print('iter', i)
     obs = env.reset()
     done = False
     totalr = 0.
     steps = 0
     while not done:
-      action = policy.predict(obs[None,:])
+      action = policy.predict(obs[None,:], mean, std)
       observations.append(obs)
       obs, r, done, _ = env.step(action)
       totalr += r
       steps += 1;
-      #if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
       if steps >= max_steps:
         break
     i += 1
     returns.append(totalr)
-  pdb.set_trace()
   return np.array(observations), np.mean(returns), np.std(returns)
 
 def label_data(obs, expert_policy):

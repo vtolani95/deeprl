@@ -14,7 +14,6 @@ import tensorflow as tf
 import numpy as np
 import tf_util
 import gym
-import load_policy
 import pdb
 import bc_reacher
 import matplotlib.pyplot as plt
@@ -40,39 +39,34 @@ def main():
     print('loaded and built')
     model_means, model_devs = [], []
     for i in range(len(dirs)):
-         
         bc_reacher.load_model(dirs[i])
-        with tf.Session():
-            tf_util.initialize()
-
-            import gym
-            env = gym.make(args.envname)
-            max_steps = args.max_timesteps or env.spec.timestep_limit
-            means, devs = [], []
-            returns = []
-            observations = []
-            actions = []
-            for i in range(args.num_rollouts):
-                print('iter', i)
-                obs = env.reset()
-                done = False
-                totalr = 0.
-                steps = 0
-                while not done:
-                    action = bc_reacher.predict(obs[None,:])
-                    observations.append(obs)
-                    actions.append(action)
-                    obs, r, done, _ = env.step(action)
-                    totalr += r
-                    steps += 1
-                    if args.render:
-                        env.render()
-                    if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
-                    if steps >= max_steps:
-                        break
-                returns.append(totalr)
-                means.append(np.mean(returns))
-                devs.append(np.std(returns))
+        env = gym.make(args.envname)
+        max_steps = args.max_timesteps or env.spec.timestep_limit
+        means, devs = [], []
+        returns = []
+        observations = []
+        actions = []
+        for i in range(args.num_rollouts):
+            print('iter', i)
+            obs = env.reset()
+            done = False
+            totalr = 0.
+            steps = 0
+            while not done:
+                action = bc_reacher.predict(obs[None,:])
+                observations.append(obs)
+                actions.append(action)
+                obs, r, done, _ = env.step(action)
+                totalr += r
+                steps += 1
+                if args.render:
+                    env.render()
+                if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
+                if steps >= max_steps:
+                    break
+            returns.append(totalr)
+            means.append(np.mean(returns))
+            devs.append(np.std(returns))
         print('returns', returns)
         print('mean return', np.mean(returns))
         print('std of return', np.std(returns))
@@ -81,15 +75,21 @@ def main():
     #pdb.set_trace()
     fig = plt.figure(1, figsize=(8, 12))
     fig.clf()
-    ax = fig.add_subplot(2, 1, 1)
-    ax.stem(dropouts, model_means)
-    plt.title('Mean Return')
-    plt.xlabel('Training Dropout Percentage')
+    ax = fig.add_subplot(1,1,1)
+    ax.errorbar(dropouts, model_means, model_devs, linestyle='None', marker='^')
+    ax.plot(dropouts, np.ones(len(dropouts))*-3.9318, 'r-')
+    plt.title('Mean and Std of Reacher Return vs Keep Prob')
+    plt.xlabel('Keep Prob')
+    plt.ylabel('Return')
+#    ax = fig.add_subplot(2, 1, 1)
+   # ax.stem(dropouts, model_means)
+ #   plt.title('Mean Return')
+  #  plt.xlabel('Training Dropout Percentage')
     
-    ax = fig.add_subplot(2,1,2)
-    ax.stem(dropouts, model_devs)
-    plt.title('Std Dev Return')
-    plt.xlabel('Training Dropout Percentage')
+    #ax = fig.add_subplot(2,1,2)
+    #ax.stem(dropouts, model_devs)
+    #plt.title('Std Dev Return')
+    #plt.xlabel('Training Dropout Percentage')
     plt.savefig('2_2.png')
         #expert_data = {'observations': np.array(observations),
                   #     'actions': np.array(actions)}

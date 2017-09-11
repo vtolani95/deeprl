@@ -15,7 +15,7 @@ import numpy as np
 import tf_util
 import gym
 import pdb
-import bc_reacher as policy
+import bc_hopper as policy
 
 def main():
     import argparse
@@ -28,7 +28,9 @@ def main():
     args = parser.parse_args()
 
     print('loading and building expert policy')
-    policy.load_model('Reacher-v1_v1.0_0.0001-0.99-1e-05-1')
+    mean, std = np.load('rollout_data/hopper_standardize.npy')
+    #policy.load_model('Ant-v1_v1.0_0.0001-0.99-1e-05-1.0')
+    policy.load_model('Hopper-v1_v1.1_0.001-0.99-1e-05-1')
     print('loaded and built')
 
 
@@ -45,7 +47,7 @@ def main():
         totalr = 0.
         steps = 0
         while not done:
-            action = policy.predict(obs[None,:]) 
+            action = policy.predict(obs[None,:], mean, std) 
             observations.append(obs)
             actions.append(action)
             obs, r, done, _ = env.step(action)
