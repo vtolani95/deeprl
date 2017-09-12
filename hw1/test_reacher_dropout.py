@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 def get_dropouts():
     import glob
-    dirs = glob.glob('./tf/Reacher-v1_v1.1*')
+    dirs = glob.glob('./tf/Reacher-v1_v1.0*')
     dirs = [x[5:] for x in dirs] #trim ./tf/
     dropouts = [float(x.split('-')[-1]) for x in dirs]
     return dirs, dropouts

@@ -4,7 +4,7 @@ import util
 import sys, os, pdb
 import matplotlib.pyplot as plt
 
-import bc_models.walker2d as bc_agent
+import bc_models.reacher as bc_agent
 
 ENV_NAME = bc_agent.ENV_NAME
 VERSION = bc_agent.VERSION
@@ -138,6 +138,7 @@ learning_rates = [1e-4]
 decay_rates = [.99]
 l2_regs = [1e-5]
 dropouts = [1.0]
+#dropouts = [1.0, .975, .95, .925, .9, .875, .85, .825, .8, .775, .75, .725, .7]
 hyperparams = [[i, j, k, m] for i in learning_rates for j in decay_rates for k in l2_regs for m in dropouts]
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
 if len(sys.argv) > 1 and sys.argv[1] == 'train':

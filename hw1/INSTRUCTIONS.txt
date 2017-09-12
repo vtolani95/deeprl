@@ -1,0 +1,27 @@
+0. To generate rollout data from expert policy run: (Reacher-v1 example)
+    - generates 20,000 examples and saves them in the directory rollout_data
+    
+    mkdir rollout_data
+    python run_experts.py experts/Reacher-v1.pkl Reacher-v1 --num_rollouts 20
+
+3.1. To train a behavioral cloning agent run:
+    - to work with a different env change line 7 (import bc_models.walker2d as bc_agent)
+    - models available are in ./bc_models/
+    
+    mkdir tf
+    python behavioral_cloning.py train
+
+3.2 To train different models with different dropout parameters:
+    - uncomment line 141 in behavioral_cloning.py (#dropouts = [1.0, .975, .95, .925, .9, .875, .85, .825, .8, .775, .75, .725, .7])
+  
+    python behavioral_cloning.py train
+
+    To compare different models in the gym env run:
+    - This will look in dirs ./tf/Reacher-v1_1.0* and run each found model in the gym environment for 20 rollouts, finally plotting the mean and std dev of return for each dropout param
+    python test_reacher_dropout.py
+
+4.2 To generate the plot for dagger run:
+    - check line 7 in behavioral_cloning.py it should be: (import bc_models.reacher as bc_agent)
+
+    mkdir dagger
+    python dagger.py
