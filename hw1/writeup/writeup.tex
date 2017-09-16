@@ -70,8 +70,8 @@ Keep probability of 1.0 achieved results closest to the expert policy so I decid
 \includegraphics[scale=.75]{dagger_training.png}
 \end{center}
 
-As can be seen above the DAgger algorithm converges to the expert policy behavior farily quickly. It does not achieve the same mean return on the Reacher task but it does do better than standard BC. To see the effects of DAgger I had to shrink the size of my NN used to represent the BC policy. For simple tasks such as Reacher the expressiveness of my previous NN model already did so well that dagger hardly had any noticeable improvements. My final model for the Reacher task has one hidden layer with size 10 as well as input and output layers while my previous Reacher model had 3 hidden layers.\\
+As can be seen above the DAgger algorithm converges to the expert policy behavior farily quickly. It does not achieve the same mean return on the Reacher task but it does do better than standard BC (iteration 1). To see the effects of DAgger I had to shrink the size of my NN used to represent the BC policy. For simple tasks such as Reacher the expressiveness of my previous NN model already did so well that dagger hardly had any noticeable improvements. My final model for the Reacher task has one hidden layer with size 10 as well as input and output layers while my previous Reacher model had 3 hidden layers.\\
 \\
-I initialized my agent by running behavioral cloning for 5 epochs (20 batches of size 50 each) on 20000 examples from the expert policy. In each iteration of the DAgger algorithm I then ran 10 rollouts, generating 10,000 more examples, and appended these to the dataset.
+I initialized my agent by running behavioral cloning for 5 epochs (20 batches of size 50 each) on 20000 examples from the expert policy. In each iteration of the DAgger algorithm I then ran 10 rollouts, generating 10,000 more examples, and appended these to the dataset. For each subsequent iteration of DAgger I train an entirely new model on the aggregated dataset- training for 5 epochs each iteration.
 
 \end{document}
