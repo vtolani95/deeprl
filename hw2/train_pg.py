@@ -443,8 +443,14 @@ def train_PG(exp_name='',
         # For debug purposes, you may wish to save the value of the loss function before
         # and after an update, and then log them below. 
 
-        # YOUR_CODE_HERE
-
+        # HYPERPARAMS
+        batch_size = 500
+        learning_rate = 1e-4
+        pdb.set_trace()
+        prev_loss = sess.run(loss, data)
+        #_ = sess.run(update_op)
+        #new_loss = sess.run(loss, data)
+        #check that loss is smaller
 
         # Log diagnostics
         returns = [path["reward"].sum() for path in paths]
