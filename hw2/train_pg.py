@@ -366,18 +366,22 @@ def train_PG(exp_name='',
         # YOUR_CODE_HERE
         q_n = []
         if reward_to_go:
-            #TODO
-            pass
+            for path in paths:
+                reward = path['reward']
+                curr_reward = reward[-1]*1.0
+                traj_rewards = [curr_reward]#rewards along this trajectory computed backward for efficiency
+                for t in reversed(range(len(reward)-1)):
+                    curr_reward = reward[t]+curr_reward*gamma
+                    traj_rewards.insert(0, curr_reward)
+                q_n.extend(traj_rewards)
         else:
             for path in paths:
                 reward = path['reward']
                 curr_ret = 0.0
-                traj_rewards = []#rewards along this trajectory computed backward for efficiency
-                for t in reversed(range(len(reward))):
+                for t in range(len(reward)):
                     r = reward[t]
                     curr_ret += gamma**t * r
-                    traj_rewards.insert(0, curr_ret)
-                q_n.extend(traj_rewards)
+                q_n.extend(curr_ret*np.ones(len(reward)))
         q_n = np.array(q_n)
         pdb.set_trace()
         #====================================================================================#
@@ -516,6 +520,6 @@ def main():
         p.join()
 
 if __name__ == "__main__":
-    train_PG(reward_to_go=False, animate=False)
+    train_PG(reward_to_go=True, animate=False)
     #train_PG(env_name='HalfCheetah-v1')
     #main()
