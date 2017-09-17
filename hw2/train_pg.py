@@ -7,11 +7,18 @@ import os
 import time
 import inspect
 from multiprocessing import Process
-
+import pdb
 #============================================================================================#
 # Utilities
 #============================================================================================#
-
+def test_mlp():
+    insize = 1000#num examples
+    outsize = 16
+    x = tf.placeholder(tf.float32, shape=(insize, 128))
+    out = build_mlp(x, outsize, 'Test', 2)
+    assert(tf.Dimension(insize) == out.shape[0])
+    assert(tf.Dimension(outsize) == out.shape[1])
+    
 def build_mlp(
         input_placeholder, 
         output_size,
@@ -34,9 +41,31 @@ def build_mlp(
     #========================================================================================#
 
     with tf.variable_scope(scope):
-        # YOUR_CODE_HERE
-        pass
-
+        fc = tf.layers.dense(inputs=input_placeholder,
+                              units=size,
+                              activation=activation,
+                              use_bias=True,
+                              kernel_initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float32),
+                              trainable=True,
+                              name='input')
+        for i in range(n_layers-1):
+            fc = tf.layers.dense(inputs=fc,
+                              units=size,
+                              activation=activation,
+                              use_bias=True,
+                              kernel_initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float32),
+                              trainable=True,
+                              name='fc%d'%(i+1))
+        
+        out = tf.layers.dense(inputs=fc,
+                              units=output_size,
+                              activation=output_activation,
+                              use_bias=True,
+                              kernel_initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float32),
+                              trainable=True,
+                              name='output')
+        return out
+ 
 def pathlength(path):
     return len(path["reward"])
 
@@ -123,7 +152,7 @@ def train_PG(exp_name='',
         sy_ac_na = tf.placeholder(shape=[None, ac_dim], name="ac", dtype=tf.float32) 
 
     # Define a placeholder for advantages
-    sy_adv_n = TODO
+    sy_adv_n = tf.placeholder(shape=[None], name='adv', dtype=tf.float32)
 
 
     #========================================================================================#
@@ -166,17 +195,36 @@ def train_PG(exp_name='',
     #========================================================================================#
 
     if discrete:
-        # YOUR_CODE_HERE
-        sy_logits_na = TODO
-        sy_sampled_ac = TODO # Hint: Use the tf.multinomial op
-        sy_logprob_n = TODO
-
+        sy_logits_na = build_mlp(input_placeholder=sy_ob_no,
+                            output_size=ac_dim,
+                            scope='Policy',
+                            n_layers=2,
+                            size=64,
+                            activation=tf.tanh,
+                            output_activation=None)
+                          
+        sy_sampled_ac = tf.multinomial(logits=sy_logits_na,
+                                      num_samples=1)
+        
+        log_probs = tf.nn.log_softmax(logits=sy_logits_na)
+        sy_ac_one_hot = tf.one_hot(sy_ac_na, ac_dim)
+        log_probs_ac = tf.multiply(log_probs, sy_ac_one_hot)
+        sy_logprob_n = tf.reduce_sum(log_probs_ac, axis=1)
+        
     else:
-        # YOUR_CODE_HERE
-        sy_mean = TODO
-        sy_logstd = TODO # logstd should just be a trainable variable, not a network output.
-        sy_sampled_ac = TODO
-        sy_logprob_n = TODO  # Hint: Use the log probability under a multivariate gaussian. 
+        sy_mean = build_mlp(input_placeholder=sy_ob_no,
+                            output_size=ac_dim,
+                            scope='Policy',
+                            n_layers=2,
+                            size=64,
+                            activation=tf.tanh,
+                            output_activation=None)
+        sy_logstd = tf.get_variable(name='logstd', shape=(1), trainable=True) #logstd should just be a trainable variable, not a network output.
+        sy_sampled_ac = tf.random_normal([1, ac_dim])*tf.exp(sy_logstd) + sy_mean
+        distr = tf.contrib.distributions.MultivariateNormalDiag(loc=sy_mean,
+                                                              scale_diag=None,
+                                                              scale_identity_multiplier=tf.exp(sy_logstd)) 
+        sy_logprob_n = tf.log(distr.prob(sy_ac_na))  # Hint: Use the log probability under a multivariate gaussian. 
 
 
 
@@ -184,8 +232,8 @@ def train_PG(exp_name='',
     #                           ----------SECTION 4----------
     # Loss Function and Training Operation
     #========================================================================================#
-
-    loss = TODO # Loss function that we'll differentiate to get the policy gradient.
+    weighted_log_probs = tf.multiply(sy_logprob_n, sy_adv_n)#weight by advantages
+    loss =  tf.reduce_sum(weighted_log_probs)# Loss function that we'll differentiate to get the policy gradient.
     update_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
 
@@ -224,7 +272,6 @@ def train_PG(exp_name='',
     #========================================================================================#
 
     total_timesteps = 0
-
     for itr in range(n_iter):
         print("********** Iteration %i ************"%itr)
 
@@ -242,7 +289,7 @@ def train_PG(exp_name='',
                     time.sleep(0.05)
                 obs.append(ob)
                 ac = sess.run(sy_sampled_ac, feed_dict={sy_ob_no : ob[None]})
-                ac = ac[0]
+                ac = ac[0][0]
                 acs.append(ac)
                 ob, rew, done, _ = env.step(ac)
                 rewards.append(rew)
@@ -262,7 +309,7 @@ def train_PG(exp_name='',
         # across paths
         ob_no = np.concatenate([path["observation"] for path in paths])
         ac_na = np.concatenate([path["action"] for path in paths])
-
+        pdb.set_trace()
         #====================================================================================#
         #                           ----------SECTION 4----------
         # Computing Q-values
@@ -317,8 +364,22 @@ def train_PG(exp_name='',
         #====================================================================================#
 
         # YOUR_CODE_HERE
-        q_n = TODO
-
+        q_n = []
+        if reward_to_go:
+            #TODO
+            pass
+        else:
+            for path in paths:
+                reward = path['reward']
+                curr_ret = 0.0
+                traj_rewards = []#rewards along this trajectory computed backward for efficiency
+                for t in reversed(range(len(reward))):
+                    r = reward[t]
+                    curr_ret += gamma**t * r
+                    traj_rewards.insert(0, curr_ret)
+                q_n.extend(traj_rewards)
+        q_n = np.array(q_n)
+        pdb.set_trace()
         #====================================================================================#
         #                           ----------SECTION 5----------
         # Computing Baselines
@@ -347,8 +408,7 @@ def train_PG(exp_name='',
             # On the next line, implement a trick which is known empirically to reduce variance
             # in policy gradient methods: normalize adv_n to have mean zero and std=1. 
             # YOUR_CODE_HERE
-            pass
-
+            adv_n = (adv_n - np.mean(adv_n))/np.std(adv_n)
 
         #====================================================================================#
         #                           ----------SECTION 5----------
@@ -454,7 +514,8 @@ def main():
         p = Process(target=train_func, args=tuple())
         p.start()
         p.join()
-        
 
 if __name__ == "__main__":
-    main()
+    train_PG(reward_to_go=False, animate=False)
+    #train_PG(env_name='HalfCheetah-v1')
+    #main()
