@@ -233,8 +233,8 @@ def train_PG(exp_name='',
     # Loss Function and Training Operation
     #========================================================================================#
     weighted_log_probs = tf.multiply(sy_logprob_n, sy_adv_n)#weight by advantages
-    loss =  tf.reduce_sum(weighted_log_probs)# Loss function that we'll differentiate to get the policy gradient.
-    update_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
+    loss = tf.reduce_sum(weighted_log_probs)# Loss function that we'll differentiate to get the policy gradient.
+    update_op = tf.train.AdamOptimizer(learning_rate).minimize(-1.0*loss)#negative sign for gradient ascent
 
 
     #========================================================================================#
@@ -309,7 +309,6 @@ def train_PG(exp_name='',
         # across paths
         ob_no = np.concatenate([path["observation"] for path in paths])
         ac_na = np.concatenate([path["action"] for path in paths])
-        pdb.set_trace()
         #====================================================================================#
         #                           ----------SECTION 4----------
         # Computing Q-values
@@ -383,7 +382,6 @@ def train_PG(exp_name='',
                     curr_ret += gamma**t * r
                 q_n.extend(curr_ret*np.ones(len(reward)))
         q_n = np.array(q_n)
-        pdb.set_trace()
         #====================================================================================#
         #                           ----------SECTION 5----------
         # Computing Baselines
@@ -412,7 +410,7 @@ def train_PG(exp_name='',
             # On the next line, implement a trick which is known empirically to reduce variance
             # in policy gradient methods: normalize adv_n to have mean zero and std=1. 
             # YOUR_CODE_HERE
-            adv_n = (adv_n - np.mean(adv_n))/np.std(adv_n)
+            adv_n = (adv_n - np.mean(adv_n))/np.std(adv_n+1e-7)
 
         #====================================================================================#
         #                           ----------SECTION 5----------
@@ -442,15 +440,18 @@ def train_PG(exp_name='',
         # 
         # For debug purposes, you may wish to save the value of the loss function before
         # and after an update, and then log them below. 
-
-        # HYPERPARAMS
-        batch_size = 500
-        learning_rate = 1e-4
-        pdb.set_trace()
-        prev_loss = sess.run(loss, data)
-        #_ = sess.run(update_op)
-        #new_loss = sess.run(loss, data)
-        #check that loss is smaller
+        prev_loss = sess.run(loss, feed_dict={sy_adv_n: adv_n,
+                        sy_ob_no: ob_no, 
+                        sy_ac_na: ac_na})
+        
+        sess.run(update_op, feed_dict={sy_adv_n: adv_n,
+                        sy_ob_no: ob_no, 
+                        sy_ac_na: ac_na})
+        
+        new_loss = sess.run(loss, feed_dict={sy_adv_n: adv_n,
+                        sy_ob_no: ob_no, 
+                        sy_ac_na: ac_na})
+ 
 
         # Log diagnostics
         returns = [path["reward"].sum() for path in paths]
@@ -526,6 +527,6 @@ def main():
         p.join()
 
 if __name__ == "__main__":
-    train_PG(reward_to_go=True, animate=False)
+    #train_PG(reward_to_go=False, animate=False)
     #train_PG(env_name='HalfCheetah-v1')
-    #main()
+    main()
