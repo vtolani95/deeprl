@@ -198,8 +198,8 @@ def train_PG(exp_name='',
         sy_logits_na = build_mlp(input_placeholder=sy_ob_no,
                             output_size=ac_dim,
                             scope='Policy',
-                            n_layers=2,
-                            size=64,
+                            n_layers=n_layers,
+                            size=size,
                             activation=tf.tanh,
                             output_activation=None)
                           
@@ -215,8 +215,8 @@ def train_PG(exp_name='',
         sy_mean = build_mlp(input_placeholder=sy_ob_no,
                             output_size=ac_dim,
                             scope='Policy',
-                            n_layers=2,
-                            size=64,
+                            n_layers=n_layers,
+                            size=size,
                             activation=tf.tanh,
                             output_activation=None)
         sy_logstd = tf.get_variable(name='logstd', shape=(1), trainable=True) #logstd should just be a trainable variable, not a network output.
@@ -232,9 +232,9 @@ def train_PG(exp_name='',
     #                           ----------SECTION 4----------
     # Loss Function and Training Operation
     #========================================================================================#
-    weighted_log_probs = tf.multiply(sy_logprob_n, sy_adv_n)#weight by advantages
-    loss = tf.reduce_sum(weighted_log_probs)# Loss function that we'll differentiate to get the policy gradient.
-    update_op = tf.train.AdamOptimizer(learning_rate).minimize(-1.0*loss)#negative sign for gradient ascent
+    weighted_log_probs = tf.multiply(sy_logprob_n, sy_adv_n) #weight by advantages
+    loss = tf.reduce_sum(weighted_log_probs) #Loss function that we'll differentiate to get the policy gradient.
+    update_op = tf.train.AdamOptimizer(learning_rate).minimize(-1.0*loss) #negative sign for gradient ascent
 
 
     #========================================================================================#
@@ -439,7 +439,11 @@ def train_PG(exp_name='',
         # the current batch of rollouts.
         # 
         # For debug purposes, you may wish to save the value of the loss function before
-        # and after an update, and then log them below. 
+        # and after an update, and then log them below.
+        #pdb.set_trace() 
+        if not discrete:
+            ac_na = ac_na[None].T
+
         prev_loss = sess.run(loss, feed_dict={sy_adv_n: adv_n,
                         sy_ob_no: ob_no, 
                         sy_ac_na: ac_na})
@@ -528,5 +532,5 @@ def main():
 
 if __name__ == "__main__":
     #train_PG(reward_to_go=False, animate=False)
-    #train_PG(env_name='HalfCheetah-v1')
+    #train_PG(env_name='InvertedPendulum-v1', animate=False, n_layers=2, size=32)
     main()
