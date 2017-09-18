@@ -219,21 +219,22 @@ def train_PG(exp_name='',
                             size=size,
                             activation=tf.tanh,
                             output_activation=None)
-        sy_logstd = tf.get_variable(name='logstd', shape=(1), trainable=True) #logstd should just be a trainable variable, not a network output.
-        sy_sampled_ac = tf.random_normal([1, ac_dim])*tf.exp(sy_logstd) + sy_mean
-        distr = tf.contrib.distributions.MultivariateNormalDiag(loc=sy_mean,
-                                                              scale_diag=None,
-                                                              scale_identity_multiplier=tf.exp(sy_logstd)) 
-        sy_logprob_n = tf.log(distr.prob(sy_ac_na))  # Hint: Use the log probability under a multivariate gaussian. 
-
-
+        
+        sy_logstd = tf.get_variable(name='logstd', shape=[ac_dim], trainable=True) #logstd should just be a trainable variable, not a network output.
+        sy_sampled_ac = tf.random_normal(tf.shape(sy_mean))*tf.exp(sy_logstd) + sy_mean
+        #distr = tf.contrib.distributions.MultivariateNormalDiag(loc=sy_mean,
+        #                                                      scale_diag=None,
+        #                                                      scale_identity_multiplier=tf.exp(sy_logstd)) 
+        #sy_logprob_n = tf.log(distr.prob(sy_ac_na))  # Hint: Use the log probability under a multivariate gaussian. 
+        sy_ind_probs = -.5*tf.square((sy_ac_na-sy_mean)/tf.exp(sy_logstd))-sy_logstd-.5*tf.log(2*np.pi)
+        sy_logprob_n = tf.reduce_sum(sy_ind_probs, axis=1)
 
     #========================================================================================#
     #                           ----------SECTION 4----------
     # Loss Function and Training Operation
     #========================================================================================#
     weighted_log_probs = tf.multiply(sy_logprob_n, sy_adv_n) #weight by advantages
-    loss = tf.reduce_sum(weighted_log_probs) #Loss function that we'll differentiate to get the policy gradient.
+    loss = tf.reduce_mean(weighted_log_probs) #Loss function that we'll differentiate to get the policy gradient.
     update_op = tf.train.AdamOptimizer(learning_rate).minimize(-1.0*loss) #negative sign for gradient ascent
 
 
@@ -250,9 +251,11 @@ def train_PG(exp_name='',
                                 n_layers=n_layers,
                                 size=size))
         # Define placeholders for targets, a loss function and an update op for fitting a 
-        # neural network baseline. These will be used to fit the neural network baseline. 
-        # YOUR_CODE_HERE
-        baseline_update_op = TODO
+        # neural network baseline. These will be used to fit the neural network baseline.
+        sum_expected_rewards = tf.placeholder(shape=[None], name='sum_expected_rewards', dtype=tf.float32) 
+        bs_learn_rate = tf.placeholder(name='baseline_learn_rate', dtype=tf.float32)
+        baseline_loss = tf.nn.l2_loss(baseline_prediction-sum_expected_rewards)
+        baseline_update_op = tf.train.AdamOptimizer(bs_learn_rate).minimize(baseline_loss) 
 
 
     #========================================================================================#
@@ -289,7 +292,7 @@ def train_PG(exp_name='',
                     time.sleep(0.05)
                 obs.append(ob)
                 ac = sess.run(sy_sampled_ac, feed_dict={sy_ob_no : ob[None]})
-                ac = ac[0][0]
+                ac = ac[0]
                 acs.append(ac)
                 ob, rew, done, _ = env.step(ac)
                 rewards.append(rew)
@@ -395,8 +398,8 @@ def train_PG(exp_name='',
             # Hint #bl1: rescale the output from the nn_baseline to match the statistics
             # (mean and std) of the current or previous batch of Q-values. (Goes with Hint
             # #bl2 below.)
-
-            b_n = TODO
+            b_n = sess.run(baseline_prediction, feed_dict={sy_ob_no: ob_no})
+            b_n = q_n.mean()+b_n*q_n.std() #match the mean,std
             adv_n = q_n - b_n
         else:
             adv_n = q_n.copy()
@@ -410,7 +413,7 @@ def train_PG(exp_name='',
             # On the next line, implement a trick which is known empirically to reduce variance
             # in policy gradient methods: normalize adv_n to have mean zero and std=1. 
             # YOUR_CODE_HERE
-            adv_n = (adv_n - np.mean(adv_n))/np.std(adv_n+1e-7)
+            adv_n = (adv_n - adv_n.mean())/(adv_n.std()+1e-7)
 
         #====================================================================================#
         #                           ----------SECTION 5----------
@@ -426,10 +429,16 @@ def train_PG(exp_name='',
             #
             # Hint #bl2: Instead of trying to target raw Q-values directly, rescale the 
             # targets to have mean zero and std=1. (Goes with Hint #bl1 above.)
-
-            # YOUR_CODE_HERE
-            pass
-
+            baseline_learn_rate = 1e-3
+            q_n_scaled = (q_n - q_n.mean())/(q_n.std()+1e-8)
+            prev_bs_loss = sess.run(baseline_loss, feed_dict={sy_ob_no: ob_no,
+                                  sum_expected_rewards: q_n_scaled})
+            sess.run(baseline_update_op, feed_dict={sy_ob_no: ob_no,
+                                  bs_learn_rate: baseline_learn_rate,
+                                  sum_expected_rewards: q_n_scaled})
+            bs_loss = sess.run(baseline_loss, feed_dict={sy_ob_no: ob_no,
+                                  sum_expected_rewards: q_n_scaled})
+            #pdb.set_trace()
         #====================================================================================#
         #                           ----------SECTION 4----------
         # Performing the Policy Update
@@ -440,10 +449,7 @@ def train_PG(exp_name='',
         # 
         # For debug purposes, you may wish to save the value of the loss function before
         # and after an update, and then log them below.
-        #pdb.set_trace() 
-        if not discrete:
-            ac_na = ac_na[None].T
-
+        #pdb.set_trace()
         prev_loss = sess.run(loss, feed_dict={sy_adv_n: adv_n,
                         sy_ob_no: ob_no, 
                         sy_ac_na: ac_na})
@@ -531,6 +537,8 @@ def main():
         p.join()
 
 if __name__ == "__main__":
-    #train_PG(reward_to_go=False, animate=False)
-    #train_PG(env_name='InvertedPendulum-v1', animate=False, n_layers=2, size=32)
+    #train_PG(reward_to_go=False, animate=False, nn_baseline=True)
+    #train_PG(env_name='HalfCheetah-v1', animate=False)
+    #train_PG(env_name='InvertedPendulum-v1', animate=False, n_layers=2, size=64, gamma=1.0, min_timesteps_per_batch=5000, learning_rate=1e-2, nn_baseline=False, normalize_advantages=True, reward_to_go=True, seed=1)
+
     main()
