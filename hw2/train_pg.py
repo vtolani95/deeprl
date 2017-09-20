@@ -536,8 +536,4 @@ def main():
         p.join()
 
 if __name__ == "__main__":
-    #train_PG(reward_to_go=False, animate=False, nn_baseline=True)
-    #train_PG(env_name='HalfCheetah-v1', animate=False)
-    #train_PG(env_name='InvertedPendulum-v1', animate=False, n_layers=2, size=64, gamma=1.0, min_timesteps_per_batch=5000, learning_rate=1e-2, nn_baseline=False, normalize_advantages=True, reward_to_go=True, seed=1)
-
     main()
