@@ -220,13 +220,13 @@ def train_PG(exp_name='',
                             activation=tf.tanh,
                             output_activation=None)
         
-        sy_logstd = tf.get_variable(name='logstd', shape=[ac_dim], trainable=True) #logstd should just be a trainable variable, not a network output.
+        sy_logstd = tf.get_variable(name='logstd', shape=[ac_dim], trainable=True, initializer=tf.zeros_initializer()) #logstd should just be a trainable variable, not a network output.
         sy_sampled_ac = tf.random_normal(tf.shape(sy_mean))*tf.exp(sy_logstd) + sy_mean
         #distr = tf.contrib.distributions.MultivariateNormalDiag(loc=sy_mean,
         #                                                      scale_diag=None,
         #                                                      scale_identity_multiplier=tf.exp(sy_logstd)) 
         #sy_logprob_n = tf.log(distr.prob(sy_ac_na))  # Hint: Use the log probability under a multivariate gaussian. 
-        sy_ind_probs = -.5*tf.square((sy_ac_na-sy_mean)/tf.exp(sy_logstd))-sy_logstd-.5*tf.log(2*np.pi)
+        sy_ind_probs = -.5*tf.square((sy_ac_na-sy_mean)/(tf.exp(sy_logstd)+1e-8))-sy_logstd-.5*tf.log(2*np.pi)
         sy_logprob_n = tf.reduce_sum(sy_ind_probs, axis=1)
 
     #========================================================================================#
@@ -292,7 +292,10 @@ def train_PG(exp_name='',
                     time.sleep(0.05)
                 obs.append(ob)
                 ac = sess.run(sy_sampled_ac, feed_dict={sy_ob_no : ob[None]})
-                ac = ac[0]
+                if discrete:
+                  ac = ac[0][0]
+                else:
+                  ac = ac[0]
                 acs.append(ac)
                 ob, rew, done, _ = env.step(ac)
                 rewards.append(rew)
@@ -453,7 +456,7 @@ def train_PG(exp_name='',
         prev_loss = sess.run(loss, feed_dict={sy_adv_n: adv_n,
                         sy_ob_no: ob_no, 
                         sy_ac_na: ac_na})
-        
+        print(prev_loss)     
         sess.run(update_op, feed_dict={sy_adv_n: adv_n,
                         sy_ob_no: ob_no, 
                         sy_ac_na: ac_na})
