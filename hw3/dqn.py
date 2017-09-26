@@ -11,6 +11,13 @@ import pdb
 
 OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedule"])
 
+def epsilon_greedy(epsilon, q_vals):
+  p = random.random()
+  if p < 1-epsilon:
+    return np.argmax(q_vals)
+  else:
+    return np.random.choice(np.delete(np.r_[:len(q_vals[0])], np.argmax(q_vals)))
+
 def learn(env,
           q_func,
           optimizer_spec,
@@ -90,7 +97,6 @@ def learn(env,
         input_shape = (img_h, img_w, frame_history_len * img_c)
     num_actions = env.action_space.n
 
-    pdb.set_trace()
     # set up placeholders
     # placeholder for current observation (or state)
     obs_t_ph              = tf.placeholder(tf.uint8, [None] + list(input_shape))
@@ -128,8 +134,15 @@ def learn(env,
     # q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func')
     # Older versions of TensorFlow may require using "VARIABLES" instead of "GLOBAL_VARIABLES"
     ######
-    
     # YOUR CODE HERE
+    q_values = q_func(obs_t_float, num_actions, scope='q_func', reuse=False)
+    target_values = q_func(obs_tp1_float, num_actions, scope='target_q_func', reuse=False)
+    y_i = rew_t_ph + (1.0-done_mask_ph)*gamma*tf.reduce_max(target_values, axis=1)
+    preds = tf.reduce_sum(q_values * tf.one_hot(act_t_ph, depth=num_actions), axis=1)
+    total_error = tf.nn.l2_loss(y_i-preds) 
+
+    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func')
+    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func')
 
     ######
 
@@ -195,9 +208,22 @@ def learn(env,
         # might as well be random, since you haven't trained your net...)
 
         #####
-        
-        # YOUR CODE HERE
+        idx = replay_buffer.store_frame(last_obs)
+        q_input = replay_buffer.encode_recent_observation()
+        if model_initialized:
+            q_vals = session.run(q_values, {obs_t_ph: q_input[None]})
+            epsilon = exploration.value(t)
+            action = epsilon_greedy(epsilon, q_vals) 
+        else:
+            action = np.random.choice(num_actions)
 
+        obs, reward, done, info = env.step(action)
+        replay_buffer.store_effect(idx, action, reward, done)
+        replay_buffer.store_frame(obs)
+        last_obs = obs
+        
+        if done:
+            last_obs = env.reset()
         #####
 
         # at this point, the environment should have been advanced one step (and
@@ -211,7 +237,7 @@ def learn(env,
         if (t > learning_starts and
                 t % learning_freq == 0 and
                 replay_buffer.can_sample(batch_size)):
-            pass
+            
             # Here, you should perform training. Training consists of four steps:
             # 3.a: use the replay buffer to sample a batch of transitions (see the
             # replay buffer code for function definition, each batch that you sample
@@ -248,7 +274,19 @@ def learn(env,
             #####
             
             # YOUR CODE HERE
-
+    #        pdb.set_trace()
+            obs_t_batch, act_t_batch, rew_batch, obs_tp1_batch, done_mask  = replay_buffer.sample(batch_size)
+            if not model_initialized:
+                initialize_interdependent_variables(session, tf.global_variables(), 
+                                              {obs_t_ph: obs_t_batch,
+                                              obs_tp1_ph: obs_tp1_batch})
+                model_initialized = True
+            session.run(train_fn, feed_dict={obs_t_ph: obs_t_batch,
+                                            act_t_ph: act_t_batch,
+                                            rew_t_ph: rew_batch,
+                                            obs_tp1_ph: obs_tp1_batch,
+                                            done_mask_ph: done_mask,
+                                            learning_rate: optimizer_spec.lr_schedule.value(t)})  
             #####
 
         ### 4. Log progress
