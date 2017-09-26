@@ -287,6 +287,9 @@ def learn(env,
                                             obs_tp1_ph: obs_tp1_batch,
                                             done_mask_ph: done_mask,
                                             learning_rate: optimizer_spec.lr_schedule.value(t)})  
+            num_param_updates += 1
+            if num_param_updates % target_update_freq == 0:
+                sess.run(update_target_fn) 
             #####
 
         ### 4. Log progress
