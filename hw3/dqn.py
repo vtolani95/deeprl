@@ -3,10 +3,11 @@ import gym.spaces
 import itertools
 import numpy as np
 import random
-import tensorflow                as tf
+import tensorflow as tf
 import tensorflow.contrib.layers as layers
 from collections import namedtuple
 from dqn_utils import *
+import pdb
 
 OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedule"])
 
@@ -89,6 +90,7 @@ def learn(env,
         input_shape = (img_h, img_w, frame_history_len * img_c)
     num_actions = env.action_space.n
 
+    pdb.set_trace()
     # set up placeholders
     # placeholder for current observation (or state)
     obs_t_ph              = tf.placeholder(tf.uint8, [None] + list(input_shape))
@@ -209,6 +211,7 @@ def learn(env,
         if (t > learning_starts and
                 t % learning_freq == 0 and
                 replay_buffer.can_sample(batch_size)):
+            pass
             # Here, you should perform training. Training consists of four steps:
             # 3.a: use the replay buffer to sample a batch of transitions (see the
             # replay buffer code for function definition, each batch that you sample
