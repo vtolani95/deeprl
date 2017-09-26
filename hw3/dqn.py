@@ -289,7 +289,7 @@ def learn(env,
                                             learning_rate: optimizer_spec.lr_schedule.value(t)})  
             num_param_updates += 1
             if num_param_updates % target_update_freq == 0:
-                sess.run(update_target_fn) 
+                session.run(update_target_fn) 
             #####
 
         ### 4. Log progress
