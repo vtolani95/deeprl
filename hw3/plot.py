@@ -34,4 +34,33 @@ def plot_one():
   plt.ylabel('Reward')
   plt.show()
 
+def plot_two():
+  test1 = open('./data/test.txt', 'rb')
+  test1 = test1.read()
+  t1, mean1, best_mean1 = parse_log(test1)
+  
+  test3 = open('./data/test3.txt', 'rb')
+  test3 = test3.read()
+  t3, mean3, best_mean3 = parse_log(test3)
+  
+  test4 = open('./data/test4.txt', 'rb')
+  test4 = test4.read()
+  t4, mean4, best_mean4 = parse_log(test4)
+  
+  test5 = open('./data/test5.txt', 'rb')
+  test5 = test5.read()
+  t5, mean5, best_mean5 = parse_log(test5)
+ 
+  plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+  plt.plot(t1, mean1, 'r-', label='1e-4')
+  plt.plot(t3, mean3, 'b-', label='5e-4')
+  plt.plot(t4, mean4, 'g-', label='3e-4')
+  plt.plot(t5, mean5, 'm-', label='2e-4')
+  plt.legend()
+  plt.title('Mean Reward for Atari Pong with Different Initial Learning Rates')
+  plt.xlabel('Timesteps')
+  plt.ylabel('Reward')
+  plt.show()
+
 plot_one()
+plot_two()
