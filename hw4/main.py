@@ -10,6 +10,7 @@ import os
 import copy
 import matplotlib.pyplot as plt
 from cheetah_env import HalfCheetahEnvNew
+import pdb
 
 def sample(env, 
            controller, 
@@ -23,8 +24,20 @@ def sample(env,
         Each path can have elements for observations, next_observations, rewards, returns, actions, etc.
     """
     paths = []
-    """ YOUR CODE HERE """
-
+    for i in range(num_paths):
+      path = {}
+      ob = env.reset()
+      obs, next_obs, acs, rewards, returns = [], [], [], [], []
+      for t in range(horizon):
+          obs.append(ob)
+          ac = controller.get_action(ob)
+          ob, rew, done, _ = env.step(ac)
+          next_obs.append(ob), rewards.append(rew), acs.append(ac)
+      path['observations'] = np.array(obs)
+      path['actions'] = np.array(acs)
+      path['next_observations'] = np.array(next_obs)
+      path['rewards'] = np.array(rewards)
+      paths.append(path)
     return paths
 
 # Utility to compute cost a path for a given cost function
@@ -37,7 +50,16 @@ def compute_normalization(data):
     Return 6 elements: mean of s_t, std of s_t, mean of (s_t+1 - s_t), std of (s_t+1 - s_t), mean of actions, std of actions
     """
 
-    """ YOUR CODE HERE """
+    obs = np.vstack([path['observations'] for path in data])
+    next_obs = np.vstack([path['next_observations'] for path in data])
+    actions = np.vstack([path['actions'] for path in data])
+    deltas = next_obs - obs
+    mean_obs = np.mean(obs, axis=0)
+    std_obs = np.std(obs, axis=0)
+    mean_deltas = np.mean(deltas, axis=0) 
+    std_deltas = np.std(deltas, axis=0)
+    mean_action = np.mean(actions, axis=0)
+    std_action = np.std(actions, axis=0)
     return mean_obs, std_obs, mean_deltas, std_deltas, mean_action, std_action
 
 
@@ -100,7 +122,6 @@ def train(env,
     n_layers/size/activations   Neural network architecture arguments. 
 
     """
-
     logz.configure_output_dir(logdir)
 
     #========================================================
@@ -110,9 +131,12 @@ def train(env,
     # model.
 
     random_controller = RandomController(env)
-
-    """ YOUR CODE HERE """
-
+    dynamics_data = sample(env,
+                  controller=random_controller,
+                  num_paths=num_paths_random,
+                  horizon=env_horizon, 
+                  render=render,
+                  verbose=False)
 
     #========================================================
     # 
@@ -122,7 +146,7 @@ def train(env,
     # for normalizing inputs and denormalizing outputs
     # from the dynamics network. 
     # 
-    normalization = """ YOUR CODE HERE """
+    normalization = compute_normalization(dynamics_data)
 
 
     #========================================================
@@ -162,9 +186,15 @@ def train(env,
     # Note: You don't need to use a mixing ratio in this assignment for new and old data as described in https://arxiv.org/abs/1708.02596
     # 
     for itr in range(onpol_iters):
-        """ YOUR CODE HERE """
-
-
+        dyn_model.fit(dynamics_data)
+        data_on_policy = sample(env=env, 
+                           controller=mpc_controller, 
+                           num_paths=1,#num_paths_onpol, 
+                           horizon=env_horizon, 
+                           render=render,
+                           verbose=False)
+        dynamics_data.extend(data_on_policy)
+        ## do soemthing with costs and returns
 
         # LOGGING
         # Statistics for performance of MPC policy using
@@ -221,6 +251,7 @@ def main():
     if not(os.path.exists(logdir)):
         os.makedirs(logdir)
 
+    np.random.seed(10)
     # Make env
     if args.env_name is "HalfCheetah-v1":
         env = HalfCheetahEnvNew()
