@@ -1,0 +1,34 @@
+\documentclass[12pt]{report}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\usepackage[headheight = 50pt, top=1.5in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{fancyhdr}
+
+\pagenumbering{gobble}
+\pagestyle{fancy}
+
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\renewcommand{\headrulewidth}{4pt}
+\lhead{
+Class: Deep RL\\
+SID: 24274554\\
+Name: Varun Tolani
+\\
+HW: 3\\
+}
+\fancyhead[R]{\sf\rightmark}
+\begin{document}
+\subsection*{Question 1}
+\begin{center}
+\includegraphics[scale=.6]{./images/q1.png}
+\end{center}
+The above performance is shown using the default hyperparameters provided for us
+\newpage
+\subsection*{Question 2}
+\begin{center}
+\includegraphics[scale=.6]{./images/q2.png}
+\end{center}
+I chose to experiment with the learning schedule of Q learning. I varied the initial learning rate between 1e-4 (starter setting) to 5e-4 and made a plot of the average reward over 100 episodes. All experiments were run for 7-8 million steps on dqn\_atari. It seems that varying the initial learning rate does actually have an effect on performance of q-learning. The best setting would either be 1e-4 (default) or 2e-4. However from the graph above it is clear that 3e-4 and 5e-4 exhibit substantially worse performance.
+\end{document}
