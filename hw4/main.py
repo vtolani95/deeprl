@@ -37,6 +37,9 @@ def sample(env,
       path['actions'] = np.array(acs)
       path['next_observations'] = np.array(next_obs)
       path['rewards'] = np.array(rewards)
+      path['returns'] = np.array(np.sum(rewards))
+      if controller.cost_fn:
+          path['cost'] = path_cost(controller.cost_fn, path)
       paths.append(path)
     return paths
 
@@ -186,15 +189,18 @@ def train(env,
     # Note: You don't need to use a mixing ratio in this assignment for new and old data as described in https://arxiv.org/abs/1708.02596
     # 
     for itr in range(onpol_iters):
+        pdb.set_trace()
         dyn_model.fit(dynamics_data)
         data_on_policy = sample(env=env, 
                            controller=mpc_controller, 
-                           num_paths=1,#num_paths_onpol, 
+                           num_paths=num_paths_onpol, 
                            horizon=env_horizon, 
                            render=render,
                            verbose=False)
+        costs = np.vstack([path['cost'] for path in data_on_policy])
+        returns = np.vstack([path['returns'] for path in data_on_policy])
         dynamics_data.extend(data_on_policy)
-        ## do soemthing with costs and returns
+        ## do something with costs and returns
 
         # LOGGING
         # Statistics for performance of MPC policy using

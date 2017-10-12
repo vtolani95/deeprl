@@ -15,6 +15,7 @@ class Controller():
 class RandomController(Controller):
   def __init__(self, env):
     self.action_space = env.action_space
+    self.cost_fn = None
 
   def get_action(self, state):
     """ Your code should randomly sample an action uniformly from the action space """
