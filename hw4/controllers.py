@@ -39,11 +39,9 @@ class MPCcontroller(Controller):
 
   def get_action(self, state):
     ac_dim = self.env.action_space.shape[0]
-    rand_acs = np.zeros((self.num_simulated_paths, self.horizon, ac_dim))
-    for k in range(self.num_simulated_paths):
-        for h in range(self.horizon):
-            ac = self.env.action_space.sample()
-            rand_acs[k][h] = ac
+    rand_acs = np.random.uniform(low=self.env.action_space.low,
+                                high=self.env.action_space.high,
+                                size=(self.num_simulated_paths, self.horizon, ac_dim))
    
     paths = []
     ob = np.ones((self.num_simulated_paths, len(state)))*state
@@ -53,7 +51,6 @@ class MPCcontroller(Controller):
         ac = rand_acs[:,h]
         ob = self.dyn_model.predict(ob, ac)
         next_obs.append(ob); acs.append(ac)
-
     obs, next_obs, acs = np.array(obs), np.array(next_obs), np.array(acs)
     costs = []
     for k in range(self.num_simulated_paths):

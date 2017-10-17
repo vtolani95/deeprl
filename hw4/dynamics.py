@@ -40,15 +40,15 @@ class NNDynamicsModel():
 
         self.mean_obs, self.std_obs, self.mean_deltas, self.std_deltas, self.mean_action, self.std_action = normalization
         ob_dim, ac_dim = env.observation_space.shape[0], env.action_space.shape[0]
-        #Placeholders for unnormalized inputs, and outputs
+        #Placeholders for normalized inputs, and outputs
         self.acs = tf.placeholder(shape=[None, ac_dim],
-                                name='normalized_action',
+                                name='action',
                                 dtype=tf.float32)
         self.obs = tf.placeholder(shape=[None, ob_dim],
-                                name='normalized_obs',
+                                name='obs',
                                 dtype=tf.float32)
         self.deltas= tf.placeholder(shape=[None, ob_dim],
-                                name='normalized_output',
+                                name='deltas',
                                 dtype=tf.float32)
         #normalization
         eps = 1e-7

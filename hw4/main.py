@@ -33,6 +33,8 @@ def sample(env,
           ac = controller.get_action(ob)
           ob, rew, done, _ = env.step(ac)
           next_obs.append(ob), rewards.append(rew), acs.append(ac)
+          if render:
+              env.render()
       path['observations'] = np.array(obs)
       path['actions'] = np.array(acs)
       path['next_observations'] = np.array(next_obs)
@@ -190,6 +192,9 @@ def train(env,
     # 
     for itr in range(onpol_iters):
         dyn_model.fit(dynamics_data)
+        print('rendering')
+        if itr == 1:
+            render = True
         data_on_policy = sample(env=env, 
                            controller=mpc_controller, 
                            num_paths=num_paths_onpol, 
