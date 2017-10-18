@@ -52,10 +52,6 @@ class MPCcontroller(Controller):
         ob = self.dyn_model.predict(ob, ac)
         next_obs.append(ob); acs.append(ac)
     obs, next_obs, acs = np.array(obs), np.array(next_obs), np.array(acs)
-    costs = []
-    for k in range(self.num_simulated_paths):
-        obs_k, next_obs_k, acs_k = obs[:,k], next_obs[:,k], acs[:,k]
-        cost = trajectory_cost_fn(self.cost_fn, obs_k, acs_k, next_obs_k)
-        costs.append(cost)
+    costs = trajectory_cost_fn(self.cost_fn, obs, acs, next_obs)
     ind = np.argmin(costs)
     return acs[:,ind][0]

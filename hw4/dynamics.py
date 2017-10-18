@@ -54,7 +54,8 @@ class NNDynamicsModel():
         eps = 1e-7
         self.a_hat = (self.acs-self.mean_action)/(self.std_action+eps)
         self.ob_hat = (self.obs-self.mean_obs)/(self.std_obs+eps)
-        
+        self.delta_hat = (self.deltas-self.mean_deltas)/(self.std_deltas+eps)
+ 
         #MLP 
         self.mlp_input = tf.concat((self.a_hat, self.ob_hat), axis=1)
         self.mlp_output = build_mlp(input_placeholder=self.mlp_input,
@@ -66,8 +67,14 @@ class NNDynamicsModel():
                             output_activation=output_activation)
           
         self.normalized_output = self.mlp_output*self.std_deltas + self.mean_deltas
+        #pdb.set_trace()
+        #tf reduce mean here 
         #Loss and Train Op
-        self.loss = tf.nn.l2_loss(self.normalized_output-self.deltas, name='dynamics_loss')
+        #self.loss = tf.reduce_mean(tf.square(self.normalized_output-self.deltas))
+        self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.mlp_output-self.delta_hat), axis=1))
+        #self.loss = tf.reduce_mean(tf.square(self.mlp_output-self.delta_hat))
+        #self.loss = tf.nn.l2_loss(self.mlp_output-self.delta_hat)
+        #self.loss = tf.nn.l2_loss(self.normalized_output-self.deltas, name='dynamics_loss')
         self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss) 
     
 

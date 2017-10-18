@@ -54,7 +54,6 @@ def compute_normalization(data):
     Write a function to take in a dataset and compute the means, and stds.
     Return 6 elements: mean of s_t, std of s_t, mean of (s_t+1 - s_t), std of (s_t+1 - s_t), mean of actions, std of actions
     """
-
     obs = np.vstack([path['observations'] for path in data])
     next_obs = np.vstack([path['next_observations'] for path in data])
     actions = np.vstack([path['actions'] for path in data])
@@ -127,7 +126,6 @@ def train(env,
     n_layers/size/activations   Neural network architecture arguments. 
 
     """
-    logz.configure_output_dir(logdir)
 
     #========================================================
     # 
@@ -192,9 +190,8 @@ def train(env,
     # 
     for itr in range(onpol_iters):
         dyn_model.fit(dynamics_data)
-        print('rendering')
-        if itr == 1:
-            render = True
+        #if itr == 1:
+        #    render = True
         data_on_policy = sample(env=env, 
                            controller=mpc_controller, 
                            num_paths=num_paths_onpol, 
@@ -265,6 +262,8 @@ def main():
     if args.env_name is "HalfCheetah-v1":
         env = HalfCheetahEnvNew()
         cost_fn = cheetah_cost_fn
+    logz.configure_output_dir(logdir)
+    logz.save_params(args.__dict__) 
     train(env=env, 
                  cost_fn=cost_fn,
                  logdir=logdir,
