@@ -79,14 +79,16 @@ class NNDynamicsModel():
         next_obs = np.vstack([path['next_observations'] for path in data])
         actions = np.vstack([path['actions'] for path in data])
         deltas = next_obs - obs
-        
+        batch_size = self.batch_size 
         for i in range(self.iterations):
-            ind = np.random.choice(len(obs), self.batch_size)
-            ob_batch, a_batch, delta_batch = obs[ind], actions[ind], deltas[ind]
-            _, loss = self.sess.run((self.train_op, self.loss), {self.obs: ob_batch,
-                                              self.acs: a_batch,
-                                              self.deltas: delta_batch})
-
+            ind = np.r_[:len(obs)]
+            np.random.shuffle(ind)
+            obs, actions, deltas = obs[ind], actions[ind], deltas[ind]
+            for j in range(0, len(obs), batch_size):
+                ob_batch, a_batch, delta_batch = obs[j:j+batch_size], actions[j:j+batch_size], deltas[j:j+batch_size]
+                _, loss = self.sess.run((self.train_op, self.loss), {self.obs: ob_batch,
+                                                                      self.acs: a_batch,
+                                                                      self.deltas: delta_batch})
     def predict(self, states, actions):
         """ Write a function to take in a batch of (unnormalized) states and (unnormalized) actions and return the (unnormalized) next states as predicted by using the model """
         """ YOUR CODE HERE """
